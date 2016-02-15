@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Using source copied from http://bl.ocks.org/mbostock/3719724  -->
+
+<style type="text/css">
+
+table {
+  border-collapse: collapse;
+  font: 10px sans-serif;
+  width: 720px;
+}
+
+th {
+  font-weight: normal;
+  text-align: right;
+  padding-right: 6px;
+  min-width: 43px;
+}
+
+thead td {
+  cursor: s-resize;
+}
+
+tbody tr:first-child td {
+  padding-top: 2px;
+}
+
+tbody td {
+  padding: 0;
+  /*border-left: solid 1px #000;*/
+}
+
+#wait {
+  display: none;
+  font-size: 34px;
+}
+
+
+
+</style>
+
+<div id="wait">Working ... </div>
+
+<table>
+  <thead>
+    <tr>
+      <th>County</th>
+      <td>Off-centeredness</td>
+      <td>Weighted off-centeredness</td>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script>
+
+function statusMsg() {
+  d3.select("#wait").style({display:"block"});
+}
+
+d3.csv("data/output-data.csv", function(error, counties) {
+  if (error) throw error;
+
+  var weights = d3.keys(counties[0]).filter(function(key) {
+    return key == "difference" || key == "WeightedDifference"; 
+  });
+
+  d3.selectAll("thead td").data(weights).on("click", function(k) {
+    
+    tr.sort(function(a, b) { return (b[k]) - (a[k]); });
+  });
+
+  var tr = d3.select("tbody").selectAll("tr")
+    .data(counties)
+    .enter().append("tr");
+
+  tr.append("th")
+    .html(function(d) { return d.CountyName + '<br>' + d.StateName; });
+
+  tr.selectAll("td")
+    .data(function(d) { return weights.map(function(k) { return d[k]; }); })
+    .enter().append("td").text(function(d) { return d; });
+
+  d3.selectAll("tbody th").on("click", function(k) {console.log(k);} )
+
+});
+
+</script>

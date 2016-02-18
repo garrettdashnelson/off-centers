@@ -8,8 +8,10 @@
 table {
   border-collapse: collapse;
   font: 10px sans-serif;
-  width: 720px;
+  width: 490px;
 }
+
+#scroller-holder { height: 500px; width:500px; overflow: auto; }
 
 th {
   font-weight: normal;
@@ -36,42 +38,66 @@ tbody td {
   font-size: 34px;
 }
 
+.sortedUp { background-color: green; }
+.sortedDown { background-color: red; }
+
+.countyShape { fill: #ccc; }
+.selectedCounty { fill: red; }
+
 
 
 </style>
 
-<div id="wait">Working ... </div>
-
+<div id="scroller-holder">
 <table>
   <thead>
     <tr>
       <th>County</th>
-      <td>Off-centeredness</td>
-      <td>Weighted off-centeredness</td>
+      <td id="head-difference">Off-centeredness</td>
+      <td id="head-WeightedDifference">Weighted off-centeredness</td>
     </tr>
   </thead>
   <tbody>
   </tbody>
 </table>
+</div>
+
+<div id="map">
+</div>
+
 
 <script src="//d3js.org/d3.v3.min.js"></script>
+<script src="//d3js.org/topojson.v1.min.js"></script>
+
 <script>
 
-function statusMsg() {
-  d3.select("#wait").style({display:"block"});
-}
+
+function pad(k) { while (k.length < 3) { k = '0' + k; } return k; }
+
 
 d3.csv("data/output-data.csv", function(error, counties) {
   if (error) throw error;
 
-  var weights = d3.keys(counties[0]).filter(function(key) {
-    return key == "difference" || key == "WeightedDifference"; 
-  });
+  var tableKeys = ['difference','WeightedDifference'];
 
-  d3.selectAll("thead td").data(weights).on("click", function(k) {
-    
-    tr.sort(function(a, b) { return (b[k]) - (a[k]); });
-  });
+  headers = d3.selectAll("thead td");
+
+  headers.data(tableKeys).on("click", function(d, i) { 
+
+  	var chosenId = '#head-' + d;
+	var t = d3.select(chosenId);
+
+ 	if ( t.classed('sortedUp') ) { 
+ 		tr.sort(function(a, b) { return (b[d]) - (a[d]); });
+ 		headers.classed('sortedUp sortedDown', false);
+ 		t.classed('sortedDown', true);
+ 	 } else {
+ 	 	tr.sort(function(a, b) { return (a[d]) - (b[d]); });
+ 		headers.classed('sortedUp sortedDown', false);
+ 		t.classed('sortedUp', true);
+ 	 }
+
+   });
 
   var tr = d3.select("tbody").selectAll("tr")
     .data(counties)
@@ -81,11 +107,45 @@ d3.csv("data/output-data.csv", function(error, counties) {
     .html(function(d) { return d.CountyName + '<br>' + d.StateName; });
 
   tr.selectAll("td")
-    .data(function(d) { return weights.map(function(k) { return d[k]; }); })
+    .data(function(d) { return tableKeys.map(function(k) { return d[k]; }); })
     .enter().append("td").text(function(d) { return d; });
 
-  d3.selectAll("tbody th").on("click", function(k) {console.log(k);} )
+  d3.selectAll("tbody th").on("mouseover", function(d) { 
+
+  	countyId = "#countyid-" + d.StateFIP + pad(d.CountyFIP);
+  	console.log(countyId);
+  	d3.selectAll('.countyShape').classed('selectedCounty',false);
+  	d3.select(countyId).classed('selectedCounty',true); 
+
+  });
 
 });
 
+
+
+	var width = 900,
+		height = 500;
+
+	var path = d3.geo.path();
+
+	var svg = d3.select("body").append("svg")
+	    .attr("width", width)
+	    .attr("height", height);
+
+	d3.json("data/USCounties.json", function(error, topology) {
+	  if (error) throw error;
+
+	  svg.selectAll("path")
+	    .data(topojson.feature(topology, topology.objects.counties).features)
+	    .enter().append("path")
+	    .attr("d", path)
+	    .attr("class","countyShape")
+	    .attr("id", function(d) { return "countyid-" + d.id;} );
+	});
+
 </script>
+
+
+
+
+

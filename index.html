@@ -137,7 +137,7 @@ tbody tr:hover { background-color: #eee; }
 // Code borrowed from http://bl.ocks.org/mbostock/3719724
 
 
-function pad(k) { while (k.length < 3) { k = '0' + k; } return k; }
+function pad(n,k) { while (k.length < n) { k = '0' + k; } return k; }
 
 d3.csv("data/output-data.csv", function(error, counties) {
   if (error) throw error;
@@ -177,7 +177,7 @@ d3.csv("data/output-data.csv", function(error, counties) {
   var entries = d3.selectAll("tbody th");
 
   entries.on("mouseover", function(d) { 
-    var countyId = "#countyid-" + d.StateFIP + pad(d.CountyFIP);
+    var countyId = "#countyid-" + pad(2, d.StateFIP) + pad(3, d.CountyFIP);
     d3.selectAll('.countyShape').classed('rolloverCounty',false);
     d3.select(countyId).classed('rolloverCounty',true); 
   });
@@ -257,7 +257,7 @@ function zoomToCounty(d) {
 
   pointsLayer.clearLayers();
 
-  var countyId = "#countyid-" + d.StateFIP + pad(d.CountyFIP)
+  var countyId = "#countyid-" + pad(2, d.StateFIP) + pad(3, d.CountyFIP);
   var chosenCounty = d3.select('path' + countyId);
 
   var b = d3.geo.bounds(chosenCounty.datum()),

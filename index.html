@@ -71,7 +71,7 @@ tbody th, tbody td {
 th .county-name { font-weight: bold; font-size: 10px;}
 th .state-name { color: #666; }
 
-tbody tr:hover { background-color: #eee; }
+tbody tr:hover, .chosen-entry { background-color: rgba(225, 62, 29, 0.56) }
 
 #map {
   position: fixed;
@@ -88,8 +88,18 @@ tbody tr:hover { background-color: #eee; }
 .sortedUp .triUp { fill: #444; }
 .sortedDown .triDown { fill: #444; }
 
-.countyShape { stroke: #585858; stroke-width: 0.2px; fill: transparent; }
-.rolloverCounty { fill: red; }
+.countyShape { 
+  stroke: #585858;
+  stroke-width: 0.2px; 
+  fill: transparent;
+  cursor: pointer; }
+
+.countyShape:hover, .rolloverCounty { 
+  fill: red;
+  opacity: 0.7;
+ }
+
+#d3-map { z-index: 100; }
 
 .selectedCounty { stroke: red; stroke-width: 3px; }
 
@@ -129,23 +139,26 @@ tbody tr:hover { background-color: #eee; }
 
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script src="//d3js.org/topojson.v1.min.js"></script>
+<script src="http://d3js.org/queue.v1.min.js"></script>
+
 
 <script>
 
+var q = queue();
 
+  q.defer(buildEntries)
+    .defer(buildMap);
 
-// Code borrowed from http://bl.ocks.org/mbostock/3719724
+// Load the CSV of counties with their weight values
 
-
-function pad(n,k) { while (k.length < n) { k = '0' + k; } return k; }
-
-d3.csv("data/output-data.csv", function(error, counties) {
+function buildEntries(callback) { d3.csv("data/output-data.csv", function(error, counties) {
   if (error) throw error;
 
   var tableKeys = ['difference','WeightedDifference'];
-
   var headers = d3.selectAll("thead td");
 
+
+  // Table sorting functions
   headers.data(tableKeys).on("click", function(d, i) { 
 
   var chosenId = '#head-' + d;
@@ -163,9 +176,12 @@ d3.csv("data/output-data.csv", function(error, counties) {
 
    });
 
+  // Building the table of entries
+
   var tr = d3.select("tbody").selectAll("tr")
     .data(counties)
-    .enter().append("tr");
+    .enter().append("tr")
+    .attr("id",function(d) { return 'entry-' + d.id} );
 
   tr.append("th")
     .html(function(d) { return '<span class="county-name">' + d.CountyName + '</span><br><span class="state-name">' + d.StateName + '</span>'; });
@@ -174,19 +190,27 @@ d3.csv("data/output-data.csv", function(error, counties) {
     .data(function(d) { return tableKeys.map(function(k) { return d[k]; }); })
     .enter().append("td").text(function(d) { return d; });
 
+  // Table interaction functions
+
   var entries = d3.selectAll("tbody th");
 
   entries.on("mouseover", function(d) { 
-    var countyId = "#countyid-" + pad(2, d.StateFIP) + pad(3, d.CountyFIP);
+    var countyId = "#countyid-" + d.id;
     d3.selectAll('.countyShape').classed('rolloverCounty',false);
     d3.select(countyId).classed('rolloverCounty',true); 
   });
 
   entries.on("mouseout", function(d) { d3.selectAll('.countyShape').classed('rolloverCounty',false); });
 
-  entries.on("click", zoomToCounty );
+  entries.on("click", function(d) { zoomToCounty(d.id); } );
+  callback(null);
+
 
 });
+ }
+
+
+// Build the Leaflet map with OSM tiles
 
 
 var mapOptions = {
@@ -206,22 +230,37 @@ var tileUrl = 'http://otile2.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpg',
 
 map.addLayer(tiles);
 
-var svg = d3.select(map.getPanes().overlayPane).append("svg"),
-    g = svg.append("g").attr("class", "leaflet-zoom-hide");
+var popIcon = new L.Icon(
+  { iconUrl: 'img/pop-marker.png',
+    iconSize: [27,41],
+    iconAnchor: [13,41] }  
+  );
 
- function projectPoint(x, y) {
-    var point = map.latLngToLayerPoint(new L.LatLng(y, x));
-    this.stream.point(point.x, point.y);
-  }
+var geoIcon = new L.Icon(
+  { iconUrl: 'img/geo-marker.png',
+    iconSize: [27,41],
+    iconAnchor: [13,41] }  
+  );
+
+
+
+// Bring in the TopoJSON file and bind it to the map on a SVG layer
+
+function buildMap(callback) { d3.json("data/USCounties.json", function(error, topology) {
+  if (error) throw error;
+
+  var svg = d3.select(map.getPanes().overlayPane).append("svg"),
+    g = svg.append("g")
+      .attr("class", "leaflet-zoom-hide")
+      .attr("id","d3-map");
+
+      function projectPoint(x, y) {
+          var point = map.latLngToLayerPoint(new L.LatLng(y, x));
+          this.stream.point(point.x, point.y);
+        }
 
   var transform = d3.geo.transform({point: projectPoint}),
     path = d3.geo.path().projection(transform);
-
-
-d3.json("data/USCounties.json", function(error, topology) {
-  if (error) throw error;
-
- 
 
   var mapFeatures = g.selectAll("path")
     .data(topojson.feature(topology, topology.objects.counties).features)
@@ -229,8 +268,11 @@ d3.json("data/USCounties.json", function(error, topology) {
     .attr("class","countyShape")
     .attr("id", function(d) { return "countyid-" + d.id;} );
 
+  mapFeatures.on("click", function(d) { zoomToCounty(d.id,true); } );
+
   map.on("viewreset",repositionSvg);
   repositionSvg();
+  callback(null);
 
   function repositionSvg() {
 
@@ -246,43 +288,53 @@ d3.json("data/USCounties.json", function(error, topology) {
   g.attr("transform", "translate(" + -topLeft[0] + "," + -topLeft[1] + ")");
 
   mapFeatures.attr("d", path);
-
   }
 
+}); 
+ }
 
-});
 
-
-function zoomToCounty(d) {
+function zoomToCounty(id,scroll) {
 
   pointsLayer.clearLayers();
 
-  var countyId = "#countyid-" + pad(2, d.StateFIP) + pad(3, d.CountyFIP);
-  var chosenCounty = d3.select('path' + countyId);
+  var mapCounty = d3.select('path#countyid-' + id);
 
-  var b = d3.geo.bounds(chosenCounty.datum()),
+  var b = d3.geo.bounds(mapCounty.datum()),
     mapBounds = new L.latLngBounds( [ [b[0][1],b[0][0]],[b[1][1],b[1][0]] ]);
 
   map.fitBounds(mapBounds);
 
   d3.selectAll('.countyShape').classed('rolloverCounty selectedCounty',false);
-  chosenCounty.classed('selectedCounty',true);
+  mapCounty.classed('selectedCounty',true);
 
-  var gc = d.geocentroid.split(','),
-      pc = d.popcentroid.split(',');
+  var f = d3.select('tr#entry-' + id),
+     e = f.datum();
+
+  d3.selectAll('tr').classed('chosen-entry',false);
+  f.classed('chosen-entry',true);
+
+  if(scroll) { d3.select('#scroller-holder').property("scrollTop", f.property("offsetTop")-50 ) };
+
+  var gc = e.geocentroid.split(','),
+      pc = e.popcentroid.split(',');
 
   var geoCentroid = [ parseFloat(gc[0]), parseFloat(gc[1]) ],
       popCentroid = [ parseFloat(pc[0]), parseFloat(pc[1]) ];
 
-  var gcMarker = new L.circleMarker( geoCentroid, { fillColor: "red", fillOpacity: 0.8, color: "#fff", weight: 3, opacity: 0.7, radius: 8  } );
-  var pcMarker = new L.circleMarker( popCentroid, { fillColor: "blue", fillOpacity: 0.8, color: "#fff", weight: 3, opacity: 0.7, radius: 8 } );
+  var gcMarker = new L.marker( geoCentroid, { icon: geoIcon } ).addTo(pointsLayer);
+  var pcMarker = new L.marker( popCentroid, { icon: popIcon } ).addTo(pointsLayer);
 
-  gcMarker.addTo(pointsLayer);
-  pcMarker.addTo(pointsLayer);
+  location.hash = id;
+
+
 
 }
 
-
+q.await( function() { 
+  console.log("poo");
+  if (location.hash != "") { zoomToCounty(location.hash.substring(1),true); } 
+});
 
 </script>
 </body>

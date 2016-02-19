@@ -81,8 +81,12 @@ tbody tr:hover { background-color: #eee; }
   bottom: 0;
 }
 
-.sortedUp { background-color: green; }
-.sortedDown { background-color: red; }
+
+.triGray { fill: #AFB1B4; }
+.triBlack { fill: #444; }
+
+.sortedUp .triUp { fill: #444; }
+.sortedDown .triDown { fill: #444; }
 
 .countyShape { stroke: #585858; stroke-width: 0.2px; fill: transparent; }
 .rolloverCounty { fill: red; }
@@ -101,8 +105,16 @@ tbody tr:hover { background-color: #eee; }
   <thead>
     <tr>
       <th>County</th>
-      <td id="head-difference">Off-centeredness</td>
-      <td id="head-WeightedDifference">Weighted off-centeredness</td>
+      <td id="head-difference"><svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+   viewBox="0 0 7.6 9.6" width="10px" height="10px" xml:space="preserve">
+<polygon id="diffUp" class="triUp triGray" points="0,4.3 3.8,0 7.6,4.3 "/>
+<polygon id="diffDown" class="triDown triGray" points="7.6,5.3 3.8,9.6 0,5.3 "/>
+</svg> Difference</td>
+      <td id="head-WeightedDifference" class="sortedDown"><svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+   viewBox="0 0 7.6 9.6" width="10px" height="10px" xml:space="preserve">
+<polygon id="weightUp" class="triUp triGray" points="0,4.3 3.8,0 7.6,4.3 "/>
+<polygon id="weightDown" class="triDown triGray" points="7.6,5.3 3.8,9.6 0,5.3 "/>
+</svg> Weighted Difference</td>
     </tr>
   </thead>
 

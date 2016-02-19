@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
 <script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
 
+
 <style type="text/css">
 
 html, body { 
@@ -13,49 +14,68 @@ html, body {
   padding: 0;
   height: 100%;
   width: 100%;
+  font-family: 'Helvetica Neue','Helvetica',sans-serif;
  }
-
 
 table {
   border-collapse: collapse;
-  font: 10px sans-serif;
+  width: 100%;
 }
 
 #scroller-holder {
-	width: 25%;
+  width: 25%;
   height: 100%;
-	overflow: scroll;
+  overflow: scroll;
  }
 
-th {
-  font-weight: normal;
-  text-align: right;
-  padding-right: 6px;
-  min-width: 43px;
-  cursor: pointer;
-}
+
+
+thead tr { 
+  position: absolute;
+  font-size: 11px;
+  font-style: italic;
+  left: 0;
+  width: 25%;
+  padding: 0;
+  margin: 0;
+  background-color: #ccc;
+  }
 
 thead td {
   cursor: s-resize;
 }
 
-tbody tr:first-child td {
-  padding-top: 2px;
+thead th, thead td {
+  padding: 4px;
+  text-align: left; 
+  width: 33%;
 }
 
-tbody td {
-  padding: 0;
-  /*border-left: solid 1px #000;*/
+
+tbody tr:first-child th, tbody tr:first-child td { padding-top: 50px; }
+
+tbody tr { position: relative;
+  width: 100%;
+ }
+
+tbody th {
+  font-weight: normal;
+  cursor: pointer;
 }
 
-#wait {
-  display: none;
-  font-size: 34px;
+tbody th, tbody td {
+  font-size: 9px;
+  width: 33%;
 }
+
+th .county-name { font-weight: bold; font-size: 10px;}
+th .state-name { color: #666; }
+
+tbody tr:hover { background-color: #eee; }
 
 #map {
-	position: fixed;
-	left: 25%;
+  position: fixed;
+  left: 25%;
   right: 0;
   top: 0;
   bottom: 0;
@@ -76,6 +96,7 @@ tbody td {
 <body>
 
 <div id="scroller-holder">
+
 <table>
   <thead>
     <tr>
@@ -84,6 +105,7 @@ tbody td {
       <td id="head-WeightedDifference">Weighted off-centeredness</td>
     </tr>
   </thead>
+
   <tbody>
   </tbody>
 </table>
@@ -115,17 +137,17 @@ d3.csv("data/output-data.csv", function(error, counties) {
   headers.data(tableKeys).on("click", function(d, i) { 
 
   var chosenId = '#head-' + d;
-	var t = d3.select(chosenId);
+  var t = d3.select(chosenId);
 
- 	if ( t.classed('sortedUp') ) { 
- 		tr.sort(function(a, b) { return (b[d]) - (a[d]); });
- 		headers.classed('sortedUp sortedDown', false);
- 		t.classed('sortedDown', true);
- 	 } else {
- 	 	tr.sort(function(a, b) { return (a[d]) - (b[d]); });
- 		headers.classed('sortedUp sortedDown', false);
- 		t.classed('sortedUp', true);
- 	 }
+  if ( t.classed('sortedUp') ) { 
+    tr.sort(function(a, b) { return (b[d]) - (a[d]); });
+    headers.classed('sortedUp sortedDown', false);
+    t.classed('sortedDown', true);
+   } else {
+    tr.sort(function(a, b) { return (a[d]) - (b[d]); });
+    headers.classed('sortedUp sortedDown', false);
+    t.classed('sortedUp', true);
+   }
 
    });
 
@@ -134,7 +156,7 @@ d3.csv("data/output-data.csv", function(error, counties) {
     .enter().append("tr");
 
   tr.append("th")
-    .html(function(d) { return d.CountyName + '<br>' + d.StateName; });
+    .html(function(d) { return '<span class="county-name">' + d.CountyName + '</span><br><span class="state-name">' + d.StateName + '</span>'; });
 
   tr.selectAll("td")
     .data(function(d) { return tableKeys.map(function(k) { return d[k]; }); })

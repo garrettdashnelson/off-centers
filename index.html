@@ -269,8 +269,8 @@ function buildMap(callback) { d3.json("data/USCounties.json", function(error, to
     .attr("id", function(d) { return "countyid-" + d.id;} );
 
   mapFeatures.on("click", function(d) { 
-    if(d3.event.defaultPrevented) return;
-    zoomToCounty(d.id,true); 
+    if(!d3.event.defaultPrevented) {
+    zoomToCounty(d.id,true); }
   });
 
   map.on("viewreset",repositionSvg);

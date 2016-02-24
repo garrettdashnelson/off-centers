@@ -5,7 +5,7 @@ In an area where the population is evenly and symmetrically distributed, the geo
 
 ## Explanation
 
-See the [blog post]() which explains more about this project's concept.
+See the [blog post](http://viewshed.matinic.us/2016/02/24/997/) which explains more about this project's concept.
 
 ## Data sources
 
@@ -13,7 +13,7 @@ The population centroid data comes from the Census Bureau's [Mean Centers of Pop
 
 Geographic centroids were computed using QGIS on the Census Bureau's [20m County Boundaries](https://www.census.gov/geo/maps-data/data/cbf/cbf_counties.html) shapefile.
 
-Raw distance is calculated in meters by `data/processor.py` using the Vincenty distance algorithm in [`geopy`](https://pypi.python.org/pypi/geopy). Weighted distance is the raw distance divided by the square root of area.
+Raw distance is calculated in meters by `data/calculator.py` using the Vincenty distance algorithm in [`geopy`](https://pypi.python.org/pypi/geopy). Weighted distance is the raw distance divided by the square root of area.
 
 This data was massaged and combined into `data/output-data.csv`, and an `id` field in the format SSCCC was generated, where SS = State FIP; CCC = County FIP.
 
